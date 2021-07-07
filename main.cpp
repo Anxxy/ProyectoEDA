@@ -15,6 +15,8 @@ auto main() -> int {
   cout << wkt(a[1]) << endl;
   cout << wkt(a[2]) << endl;
 
+  cout << distance(a[0], a[2]) << endl;
+
   Tree<RTreeNode<>> t;
   return 0;
 }
