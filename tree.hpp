@@ -8,11 +8,14 @@ class Tree {
 private:
   node_t* root;
 public:
-  Tree() {
+  Tree(): root(nullptr) {
 
   }
 
   void insert(type_t&& value) {
-
+    if(root) {
+      root->insert(move(value));
+    }
+    root = new node_t(move(value));
   }
 };
