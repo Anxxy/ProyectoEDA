@@ -1,6 +1,11 @@
 #pragma once
 #include "./macros.hpp"
 
+enum class Status {
+  OK,
+  NEEDSBALANCE
+};
+
 template<int limit>
 class RTreeNode;
 
@@ -10,11 +15,13 @@ class RTreeSubNode {
   using polygon = model::polygon<point>;
   using type_t = polygon;
   using node_t = RTreeNode<limit>;
+
 private:
   node_t* next;
-  type_t* value;
+  type_t value;
+
 public:
-  RTreeSubNode(): next(nullptr), value(nullptr) {}
+  RTreeSubNode(type_t value): next(nullptr), value(value) {
 
   }
 };
@@ -33,9 +40,13 @@ class RTreeNode {
 private:
   polygon box;
   vector<subnode_t> subNodes;
-public:
 
+public:
   RTreeNode(type_t&& value) {
 
+  }
+
+  auto insert(type_t&& value) -> Status {
+    
   }
 };

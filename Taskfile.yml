@@ -1,0 +1,11 @@
+version: "3"
+
+tasks:
+  build:
+    cmds:
+      - clang++ main.cpp -o main.o -std=c++2a -pthreads -lboost_system -lboost_date_time -lboost_thread
+
+  run:
+    cmds:
+      - task: build
+      - ./main.o
