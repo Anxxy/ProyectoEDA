@@ -1,9 +1,11 @@
 #pragma once
 
-#include <boost/geometry.hpp>
 #include <boost/geometry/geometries/geometries.hpp>
+#include <boost/geometry.hpp>
 #include <iostream>
+#include <optional>
+#include <sstream>
 #include <vector>
 
 using namespace std;
-using namespace boost::geometry;
+namespace bg = boost::geometry;

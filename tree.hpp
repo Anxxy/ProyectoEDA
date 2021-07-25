@@ -12,10 +12,24 @@ public:
 
   }
 
-  void insert(type_t&& value) {
+  ~Tree() {
+    if(root) 
+      delete root;
+  }
+
+  auto insert(type_t&& value) -> void {
     if(root) {
       root->insert(move(value));
+      return;
     }
     root = new node_t(move(value));
+  }
+
+  auto insert(type_t& value) -> void {
+    this->insert(move(value));
+  }
+
+  auto getRoot() -> node_t* {
+    return root;
   }
 };
