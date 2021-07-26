@@ -25,6 +25,11 @@ public:
   RTreeSubNode(): next(nullptr), value(nullopt) {}
   RTreeSubNode(type_t&& value): next(nullptr), value(move(value)) {}
 
+  ~RTreeSubNode() {
+    if(next)
+      delete next;
+  }
+
   auto setValue(type_t&& value) -> void {
     this->value = value;
   }
@@ -64,7 +69,7 @@ public:
       case Status::OK:
         return;
       case Status::NEEDSBALANCE:
-        this->balance();
+        this->root_balance();
         break;
     }
   }
@@ -87,8 +92,11 @@ public:
     return pair(Status::NEEDSBALANCE, this);
   }
 
-  auto balance() -> void {
-
+  auto root_balance() -> void {
+    subnode_t s1;
+    subnode_t s2;
+    s1.next = new node_t();
+    s2.next = new node_t();
   }
 
   auto toString(string opt = "") -> string {
