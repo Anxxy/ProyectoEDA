@@ -1,4 +1,5 @@
 #pragma once
+#include "./macros.hpp"
 
 template<typename NODE>
 class Tree {

@@ -11,11 +11,17 @@ auto main() -> int {
 
   polygon a[5];
 
+  // bg::read_wkt("POLYGON((0 0, 0 2, 2 2, 2 0, 0 0))", a[0]);
+  // bg::read_wkt("POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))", a[1]);
+  // bg::read_wkt("POLYGON((1 1, 1 2, 2 2, 2 1, 1 1))", a[2]);
+  // bg::read_wkt("POLYGON((1 1, 1 2))", a[3]);
+  // bg::read_wkt("POLYGON((0 2, 1 2, 1 3, 0 3, 0 2))", a[4]);
+
   bg::read_wkt("POLYGON((0 0, 0 2, 2 2, 2 0, 0 0))", a[0]);
-  bg::read_wkt("POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))", a[1]);
-  bg::read_wkt("POLYGON((1 1, 1 2, 2 2, 2 1, 1 1))", a[2]);
-  bg::read_wkt("POLYGON((1 1, 1 2))", a[3]);
-  bg::read_wkt("POLYGON((0 2, 1 2, 1 3, 0 3, 0 2))", a[4]);
+  bg::read_wkt("POLYGON((4 8))", a[1]);
+  bg::read_wkt("POLYGON((20 10))", a[2]);
+  bg::read_wkt("POLYGON((4 6))", a[3]);
+  bg::read_wkt("POLYGON((20 8))", a[4]);
 
   // cout << bg::wkt(a[0]) << endl;
   // cout << bg::wkt(a[1]) << endl;
