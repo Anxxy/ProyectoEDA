@@ -1,14 +1,9 @@
 #pragma once
 #include "./macros.hpp"
-#define DELBYV(s, c)                                                           \
-  for (auto itr = s.begin(); itr != s.end(); itr++) {                          \
-    if (*itr == c) {                                                           \
-      s.erase(itr);                                                            \
-      break;                                                                   \
-    }                                                                          \
-  }
+#include "./tree.hpp"
+#include "./rtreenoderoutes.hpp"
+#define DELBYV(s, c) for (auto itr = s.begin(); itr != s.end(); itr++){ if(*itr == c){s.erase(itr); break;} }
 
-enum class Status { OK, NEEDSBALANCE };
 
 template <int limit> class RTreeNode;
 
@@ -20,19 +15,32 @@ template <int limit = 4> class RTreeSubNode {
   using type_t = typename node_t::type_t;
 
 private:
-  node_t *next;
+  string id;
   optional<type_t> value;
 
 public:
-  RTreeSubNode() : next(nullptr), value(nullopt) {}
-  RTreeSubNode(type_t &&value) : next(nullptr), value(move(value)) {}
+  node_t* next;
+  Tree<RTreeNodeRoutes<>>* routes; 
+  
+  RTreeSubNode(): id(""), next(nullptr), value(nullopt), routes(nullptr) {}
+  RTreeSubNode(string id, type_t&& value): id(id), next(nullptr), value(move(value)), routes(nullptr) {}
 
   ~RTreeSubNode() {
     if (next)
       delete next;
+    if(routes)
+      delete routes;
+  }
+
+  auto setId(string id) -> void {
+    this->id = id;
   }
 
   auto setValue(type_t &&value) -> void { this->value = value; }
+
+  auto getId() -> string {
+    return this->id;
+  }
 
   auto getPolygon() -> type_t {
     if (value.has_value()) {
@@ -65,62 +73,17 @@ template <int limit = 4> class RTreeNode {
   using subnode_t = RTreeSubNode<limit>;
 
 private:
-  box_t box;
-  vector<subnode_t *> *subNodes;
   bool is_leaf;
 
 public:
-  RTreeNode(vector<type_t> v) {
-    subNodes = new vector<subnode_t *>;
-    bool passed = false;
-    for (auto &val : v) {
-      if (passed) {
-        box_t b;
-        bg::envelope(val, b);
-        bg::set<bg::min_corner, 0>(box, min(bg::get<bg::min_corner, 0>(box),
-                                            bg::get<bg::min_corner, 0>(b)));
-        bg::set<bg::min_corner, 1>(box, min(bg::get<bg::min_corner, 1>(box),
-                                            bg::get<bg::min_corner, 1>(b)));
-        bg::set<bg::max_corner, 0>(box, max(bg::get<bg::max_corner, 0>(box),
-                                            bg::get<bg::max_corner, 0>(b)));
-        bg::set<bg::max_corner, 1>(box, max(bg::get<bg::max_corner, 1>(box),
-                                            bg::get<bg::max_corner, 1>(b)));
-      } else {
-        bg::envelope(val, box);
-        passed = true;
-      }
-    }
+  box_t box;
+  vector<subnode_t*> *subNodes;
+  Tree<RTreeNodeRoutes<>>* routes = nullptr; 
 
-    if (v.size() <= (limit - 1)) {
-      for (auto &val : v) {
-        subnode_t *next = new subnode_t(move(val));
-        subNodes->push_back(next);
-      }
-      is_leaf = true;
-      return;
-    }
-
-    vector<vector<type_t>> values;
-    int oldp = 0;
-    for (int i = 1; i <= limit - 2; i++) {
-      int p = v.size() / (limit - 1) * i;
-      vector<type_t> v1(v.begin() + oldp, v.begin() + p);
-      values.push_back(v1);
-      oldp = p;
-    }
-    vector<type_t> v2(v.begin() + oldp, v.end());
-    values.push_back(v2);
-    is_leaf = 0;
-    for (int i = 0; i < limit - 1; i++) {
-      subnode_t *n = new subnode_t();
-      n->next = new node_t(values[i]);
-      subNodes->push_back(n);
-    }
-  }
-  RTreeNode(type_t &&value) : is_leaf(true) {
-    subNodes = new vector<subnode_t *>;
+  RTreeNode(string id, type_t&& value): is_leaf(true) {
+    subNodes = new vector<subnode_t*>;
     bg::envelope(value, this->box);
-    subNodes->push_back(new subnode_t(move(value)));
+    subNodes->push_back(new subnode_t(id, move(value)));
   }
 
   RTreeNode() : is_leaf(true), subNodes(new vector<subnode_t *>) {}
@@ -130,32 +93,54 @@ public:
       delete nd;
     }
     delete subNodes;
+    delete routes;
   }
 
-  auto insert(type_t &&value) -> void {
-    Status status = this->add(move(value)).first;
-    switch (status) {
-    case Status::OK:
-      return;
-    case Status::NEEDSBALANCE:
-      this->root_balance();
-      break;
+  auto insert(string id, type_t&& value) -> void {
+    Status status = this->add(id, move(value)).first;
+    switch(status) {
+      case Status::OK:
+        return;
+      case Status::NEEDSBALANCE:
+        this->root_balance();
+        break;
     }
   }
 
-  auto add(type_t &&value) -> pair<Status, node_t *> {
+  auto insert_route(string id, type_t value) -> void {
     box_t b;
     bg::envelope(value, b);
-    bg::set<bg::min_corner, 0>(box, min(bg::get<bg::min_corner, 0>(box),
-                                        bg::get<bg::min_corner, 0>(b)));
-    bg::set<bg::min_corner, 1>(box, min(bg::get<bg::min_corner, 1>(box),
-                                        bg::get<bg::min_corner, 1>(b)));
-    bg::set<bg::max_corner, 0>(box, max(bg::get<bg::max_corner, 0>(box),
-                                        bg::get<bg::max_corner, 0>(b)));
-    bg::set<bg::max_corner, 1>(box, max(bg::get<bg::max_corner, 1>(box),
-                                        bg::get<bg::max_corner, 1>(b)));
-    if (this->is_leaf) {
-      subNodes->push_back(new subnode_t(move(value)));
+    type_t _value = value;
+    point_t p;
+    if(bg::within(b, this->box)){
+      if(!routes) routes = new Tree<RTreeNodeRoutes<>>;
+      routes->insert(id, value);
+      for(auto sub : *subNodes) {
+        if (sub->value.has_value()){
+          type_t _value_2 = _value;
+          if(bg::covered_by(_value, sub->getPolygon())){
+            if(!sub->routes) sub->routes = new Tree<RTreeNodeRoutes<>>;
+            sub->routes->insert(id, _value);
+            return;
+          }
+        } else {
+          if(sub->next) {
+            sub->next->insert_route(id, _value);
+          }
+        }
+      }
+    }
+  }
+
+  auto add(string id, type_t&& value) -> pair<Status, node_t*> {
+    box_t b;
+    bg::envelope(value, b);
+    bg::set<bg::min_corner, 0>(box, min(bg::get<bg::min_corner, 0>(box), bg::get<bg::min_corner, 0>(b)));
+    bg::set<bg::min_corner, 1>(box, min(bg::get<bg::min_corner, 1>(box), bg::get<bg::min_corner, 1>(b)));
+    bg::set<bg::max_corner, 0>(box, max(bg::get<bg::max_corner, 0>(box), bg::get<bg::max_corner, 0>(b)));
+    bg::set<bg::max_corner, 1>(box, max(bg::get<bg::max_corner, 1>(box), bg::get<bg::max_corner, 1>(b)));
+    if(this->is_leaf) {
+      subNodes->push_back(new subnode_t(id, move(value)));
     } else {
       subnode_t *next;
       double mind = numeric_limits<double>::max();
@@ -166,13 +151,13 @@ public:
           next = nd;
         }
       }
-      pair<Status, node_t *> res = next->next->add(move(value));
-      switch (res.first) {
-      case Status::OK:
-        break;
-      case Status::NEEDSBALANCE:
-        this->balance(next);
-        break;
+      pair<Status, node_t*> res = next->next->add(id, move(value));
+      switch(res.first) {
+        case Status::OK:
+          break;
+        case Status::NEEDSBALANCE:
+          this->balance(next);
+          break;
       }
     }
     if (subNodes->size() < limit) {
@@ -407,7 +392,8 @@ public:
       if (sub->value.has_value()) {
         value += opt + "\t";
         stringstream s;
-        s << bg::dsv(sub->value.value());
+        //s << bg::dsv(sub->value.value());
+        s << sub->id;
         value += s.str();
         value += "\n";
       } else {
@@ -476,6 +462,101 @@ public:
     }
     return result;
   }
+
+  auto routesInTheNeighborhood() -> vector<pair<string,Tree<RTreeNodeRoutes<>>*>> {
+    vector<pair<string,Tree<RTreeNodeRoutes<>>*>> result;
+    for(auto sub : *subNodes) {
+      if (sub->value.has_value()){
+        if(sub->routes) result.push_back({sub->getId(),sub->routes});
+      } else {
+        if(sub->next) {
+          auto result_temp =  sub->next->routesInTheNeighborhood();
+          result.insert(result.end(),std::begin(result_temp),std::end(result_temp));
+        }
+      }
+    }
+    return result;
+  }
+
+  auto topNeighborhoodWithMoreRoutes() -> vector<pair<string,int>> {    
+    vector<pair<string,int>> result;
+    for(auto sub : *subNodes) {
+      if (sub->value.has_value()){
+        if(sub->routes) result.push_back({sub->getId(),sub->routes->getRoot()->numberOfRoutes()});
+      } else {
+        if(sub->next) {
+          auto result_temp =  sub->next->topNeighborhoodWithMoreRoutes();
+          result.insert(result.end(),std::begin(result_temp),std::end(result_temp));
+        }
+      }
+    }
+
+    return result;
+  }
+
+  auto rangeRoutes(box_t b) -> map<string, type_t> {
+    map<string, type_t> result;
+    if(bg::covered_by(this->box, b)){
+      if(routes) result = routes->getRoot()->getRoutes();
+    } else if(bg::intersects(this->box, b)){
+      for(auto sub : *subNodes) {
+        if (sub->value.has_value()){
+          box_t b2;
+          bg::envelope(sub->getPolygon(), b2);
+          if(bg::covered_by(b2, b)){
+            if(sub->routes) result = sub->routes->getRoot()->getRoutes();
+          } else if (bg::intersects(b2, b)){
+            if(sub->routes) {
+              auto temp = sub->routes->getRoot()->rangeRoutes(b);
+              result.insert(temp.begin(),temp.end());
+            }  
+          }
+        } else {
+          if(sub->next) {
+            auto temp = sub->next->rangeRoutes(b);
+            result.insert(temp.begin(),temp.end());
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  auto rangeRoutesCircle(double x, double y, double r) -> map<string, type_t> {
+    box_t b(point_t(x-r, y-r), point_t(x+r, y+r));
+    map<string, type_t> result;
+    if(bg::covered_by(this->box, b)){
+      //cout << "covered" << endl;
+      if(routes) result = routes->getRoot()->getRoutesCircle(x, y, r);
+    } else if(bg::intersects(b, this->box)){
+      //cout << "intersect" << endl;
+      for(auto sub : *subNodes) {
+        if (sub->value.has_value()){
+          box_t b2;
+          bg::envelope(sub->getPolygon(), b2);
+          if(bg::covered_by(b2, b)){
+            if(sub->routes) {
+              auto temp = sub->routes->getRoot()->getRoutesCircle(x, y, r);
+              result.insert(temp.begin(),temp.end());
+            }  
+          } else if (bg::intersects(b2, b)){
+            if(sub->routes) {
+              auto temp = sub->routes->getRoot()->rangeRoutesCircle(x, y, r);
+              result.insert(temp.begin(),temp.end());
+            }  
+          }
+        } else {
+          if(sub->next) {
+            auto temp = sub->next->rangeRoutesCircle(x, y, r);
+            result.insert(temp.begin(),temp.end());
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+
 };
 
 #undef DELBYV
