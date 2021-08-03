@@ -19,8 +19,8 @@ auto main() -> int {
 
   bg::read_wkt("POLYGON((6 5))", a[0]);
   bg::read_wkt("POLYGON((4 8))", a[1]);
-  bg::read_wkt("POLYGON((20 10))", a[2]);
-  bg::read_wkt("POLYGON((4 7))", a[3]);
+  bg::read_wkt("POLYGON((4 7))", a[2]);
+  bg::read_wkt("POLYGON((20 10))", a[3]);
   bg::read_wkt("POLYGON((20 9))", a[4]);
   bg::read_wkt("POLYGON((5 4))", a[5]);
   bg::read_wkt("POLYGON((22 8))", a[6]);
@@ -32,15 +32,15 @@ auto main() -> int {
 
   // cout << bg::distance(a[0], b) << endl;
 
-  Tree<RTreeNode<>> t;
-  t.insert(a[1]);
-  t.insert(a[2]);
-  t.insert(a[3]);
-  t.insert(a[4]);
-  t.insert(a[0]);
-  t.insert(a[5]);
-  t.insert(a[6]);
-  t.insert(a[7]);
+  Tree<RTreeNode<>> t(vector<polygon>(a, a+6));
+  //t.insert(a[1]);
+  //t.insert(a[2]);
+  //t.insert(a[3]);
+  //t.insert(a[4]);
+  //t.insert(a[0]);
+  //t.insert(a[5]);
+  //t.insert(a[6]);
+  //t.insert(a[7]);
 
   cout << t.getRoot()->toString() << endl;
   return 0;

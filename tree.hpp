@@ -9,6 +9,10 @@ class Tree {
 private:
   node_t* root;
 public:
+  Tree(vector<type_t> values) {
+    root = new node_t(values);
+  }
+
   Tree(): root(nullptr) {
 
   }
