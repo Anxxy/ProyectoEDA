@@ -10,4 +10,5 @@ with open('green_tripdata_2015-01.csv') as file:
       if i > 1000:
           break
       i+=1
+  f.close()
   print("finish")
