@@ -11,4 +11,5 @@ with open('neighborhoods.json') as file:
       for coordinate in feature['geometry']['coordinates'][0]:
         print(coordinate[0],' ',coordinate[1], file=f)
       print('', file=f)
+  f.close()
   print("finish")
